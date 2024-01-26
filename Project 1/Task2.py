@@ -247,10 +247,10 @@ def rhs(t,y):
 	return np.array([y1dot, y2dot, y3dot, y4dot])
 
 # Spring constant
-k = 2.
+k = 100.
 
 # Initial conditions
-y0 = np.array([0.1, 0., np.pi/4, 0.])
+y0 = np.array([0.5, -1., 0., 0.])
 t0 = 0.
 tf = 1.
 
@@ -259,5 +259,7 @@ model.name = 'Elastic Pendulum'
 
 exp_sim = BDF_3(model) # Create a BDF solver
 t, y = exp_sim.simulate(tf)
-exp_sim.plot()
+x = [states[0] for states in y]
+y = [states[1] for states in y]
+mpl.plot(x, y)
 mpl.show()
