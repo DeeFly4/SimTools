@@ -10,9 +10,9 @@ class BDF_3(Explicit_ODE):
 	"""
 	BDF-3
 	"""
-	tol=1.e-8     
-	maxit=100     
-	maxsteps=500
+	tol=1.e-8
+	maxit=100
+	maxsteps=1000
 	alpha = [11./6., -3., 1.5, -1./3.]
 	
 	def __init__(self, problem):
@@ -47,7 +47,7 @@ class BDF_3(Explicit_ODE):
 		t_nm2, t_nm1 = 0., h
 		y_nm2 = y
   
-		for i in range(self.maxsteps):
+		for i in range(self.maxsteps+1):
 			if t >= tf:
 				break
 			self.statistics["nsteps"] += 1
@@ -57,7 +57,7 @@ class BDF_3(Explicit_ODE):
 				t = t_np1
 				y = y_np1
 				y_nm1 = y
-			if i == 1:
+			elif i == 1:
 				t_np1, y_np1 = self.step_EE(t, y, h)
 				t = t_np1
 				y = y_np1
@@ -98,10 +98,10 @@ class BDF_3(Explicit_ODE):
 		t_np1 = T[0] + h
   
 		def F(y_np1):
-			return self.alpha[0]*y_np1 - self.alpha[1]*Y[0] + self.alpha[2]*Y[1] - self.alpha[3]*Y[2] - h*f(t_np1, y_np1)
+			return self.alpha[0]*y_np1 + self.alpha[1]*Y[0] + self.alpha[2]*Y[1] + self.alpha[3]*Y[2] - h*f(t_np1, y_np1)
   
 		y_np1, infodict, ier, _ = fsolve(func=F, x0=Y[0], full_output=True, xtol=self.tol, maxfev=self.maxit)
-		self.statistics["nfcns"] = infodict.get('nfev')
+		self.statistics["nfcns"] += infodict.get('nfev')
   
 		if ier == 1:
 			return t_np1, y_np1
@@ -116,6 +116,122 @@ class BDF_3(Explicit_ODE):
 			
 		self.log_message('\nSolver options:\n',                                    verbose)
 		self.log_message(' Solver            : BDF3',                     verbose)
+		self.log_message(' Solver type       : Fixed step\n',                      verbose)
+
+class BDF_4(Explicit_ODE):
+	"""
+	BDF-4
+	"""
+	tol=1.e-8
+	maxit=100
+	maxsteps=100
+	alpha = [25./12., -4., 3., -4./3., .25]
+	
+	def __init__(self, problem):
+		Explicit_ODE.__init__(self, problem) #Calls the base class
+		
+		#Solver options
+		self.options["h"] = 0.01
+		
+		#Statistics
+		self.statistics["nsteps"] = 0
+		self.statistics["nfcns"] = 0
+	
+	def _set_h(self,h):
+			self.options["h"] = float(h)
+
+	def _get_h(self):
+		return self.options["h"]
+		
+	h=property(_get_h,_set_h)
+		
+	def integrate(self, t, y, tf, opts):
+		"""
+		_integrates (t,y) values until t > tf
+		"""
+		h = self.options["h"]
+		h = min(h, abs(tf-t))
+		
+		#Lists for storing the result
+		tres = []
+		yres = []
+		
+		t_nm3, t_nm2, t_nm1 = 0., h, 2.*h
+		y_nm3 = y
+  
+		for i in range(self.maxsteps+1):
+			if t >= tf:
+				break
+			self.statistics["nsteps"] += 1
+			
+			if i == 0:  # initial steps
+				t_np1, y_np1 = self.step_EE(t, y, h)
+				t = t_np1
+				y = y_np1
+				y_nm1 = y
+			elif i == 1:
+				t_np1, y_np1 = self.step_EE(t, y, h)
+				t = t_np1
+				y = y_np1
+				y_nm2 = y
+			elif i == 2:
+				t_np1, y_np1 = self.step_EE(t, y, h)
+				t = t_np1
+				y = y_np1
+			else:
+				t_np1, y_np1 = self.step_BDF4([t, t_nm1, t_nm2, t_nm3], [y, y_nm1, y_nm2, y_nm3], h)
+				t, t_nm1, t_nm2, t_nm3 = t_np1, t, t_nm1, t_nm2
+				y, y_nm1, y_nm2, y_nm3 = y_np1, y, y_nm1, y_nm2
+			
+			tres.append(t)
+			yres.append(y.copy())
+		
+			h=min(self.h, np.abs(tf - t))
+		else:
+			raise Explicit_ODE_Exception('Final time not reached within maximum number of steps')
+		
+		return ID_PY_OK, tres, yres
+	
+	def step_EE(self, t, y, h):
+		"""
+		This calculates the next step in the integration with explicit Euler.
+		"""
+		self.statistics["nfcns"] += 1
+		
+		f = self.problem.rhs
+		return t + h, y + h*f(t, y)
+ 
+	def step_BDF4(self, T, Y, h):
+		"""
+		BDF-4: Backward differentiation formula
+		y_np1 = 1/25 * [48y_n -36y_nm1 + 16y_nm2 -3y_nm3 + 12hf(t_np1, y_np1)]
+
+		F(y_np1) = alpha*[y_np1, Y] - hf(t_np1, y_np1)
+		Find F(y_np1) = 0 with fsolve()
+		"""
+		f=self.problem.rhs
+
+		t_np1 = T[0] + h
+  
+		def F(y_np1):
+			return self.alpha[0]*y_np1 + self.alpha[1]*Y[0] + self.alpha[2]*Y[1] + self.alpha[3]*Y[2] - h*f(t_np1, y_np1)
+  
+		y_np1, infodict, ier, _ = fsolve(func=F, x0=Y[0], full_output=True, xtol=self.tol, maxfev=self.maxit)
+		self.statistics["nfcns"] += infodict.get('nfev')
+  
+		if ier == 1:
+			return t_np1, y_np1
+		else:
+			raise Explicit_ODE_Exception('Corrector could not converge within %s iterations' % self.maxit)
+			
+	def print_statistics(self, verbose=NORMAL):
+		self.log_message('Final Run Statistics            : {name} \n'.format(name=self.problem.name),        verbose)
+		self.log_message(' Step-length                    : {stepsize} '.format(stepsize=self.options["h"]), verbose)
+		self.log_message(' Number of Steps                : '+str(self.statistics["nsteps"]),          verbose)               
+		self.log_message(' Number of Function Evaluations : '+str(self.statistics["nfcns"]),         verbose)
+			
+		self.log_message('\nSolver options:\n',                                    verbose)
+		self.log_message(' Solver            : BDF4',                     verbose)
 		self.log_message(' Solver type       : Fixed step\n',                      verbose)
 
 def rhs(t,y):
