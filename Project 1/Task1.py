@@ -1,10 +1,7 @@
-from assimulo.explicit_ode import Explicit_ODE
 from assimulo.problem import Explicit_Problem
-from assimulo.ode import *
 from assimulo.solvers import CVode
 import numpy as np
 import matplotlib.pyplot as mpl
-import scipy.linalg as SL
 
 # Define the rhs function
 def rhs(t,y):
@@ -20,17 +17,32 @@ def rhs(t,y):
 	return np.array([y1dot, y2dot, y3dot, y4dot])
 
 # Spring constant
-k = 2.
+k = 50.
 
 # Initial conditions
-y0 = np.array([0.1, 0., np.pi/4, 0.])
+y0 = np.array([.5, -1, 0., 0.])
 t0 = 0.
+tf = 5.
 
 model = Explicit_Problem(rhs, y0, t0)
 model.name = 'Elastic Pendulum'
 
 sim = CVode(model)
 
-tfinal = 10.
-t, y = sim.simulate(tfinal)
-sim.plot()
+t, y = sim.simulate(tf)
+x = [states[0] for states in y]
+y = [states[1] for states in y]
+
+mpl.plot(x, y, 'o', ls='--', lw=1, ms=4, markevery=[0,-1])
+mpl.plot([0, y0[0]], [0, y0[1]], ls='-', lw=1)
+mpl.annotate('t=0', xy=(x[0], y[0]), xytext=(x[0]+.05, y[0]))
+mpl.annotate('t=%i'%tf, xy=(x[-1], y[-1]), xytext=(x[-1], y[-1] - .07))
+
+mpl.xlabel('x', fontsize=14)
+mpl.ylabel('y', fontsize=14)
+
+mpl.title('Elastic pendulum for %i s, k=%i' %(tf, k), fontsize=16)
+mpl.axis([-1, 1, -1.5, 0])
+mpl.grid(True)
+
+mpl.show()
