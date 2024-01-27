@@ -124,7 +124,7 @@ class BDF_4(Explicit_ODE):
 	"""
 	tol=1.e-8
 	maxit=100
-	maxsteps=100
+	maxsteps=1000
 	alpha = [25./12., -4., 3., -4./3., .25]
 	
 	def __init__(self, problem):
@@ -168,12 +168,12 @@ class BDF_4(Explicit_ODE):
 				t_np1, y_np1 = self.step_EE(t, y, h)
 				t = t_np1
 				y = y_np1
-				y_nm1 = y
+				y_nm2 = y
 			elif i == 1:
 				t_np1, y_np1 = self.step_EE(t, y, h)
 				t = t_np1
 				y = y_np1
-				y_nm2 = y
+				y_nm1 = y
 			elif i == 2:
 				t_np1, y_np1 = self.step_EE(t, y, h)
 				t = t_np1
@@ -214,7 +214,7 @@ class BDF_4(Explicit_ODE):
 		t_np1 = T[0] + h
   
 		def F(y_np1):
-			return self.alpha[0]*y_np1 + self.alpha[1]*Y[0] + self.alpha[2]*Y[1] + self.alpha[3]*Y[2] - h*f(t_np1, y_np1)
+			return self.alpha[0]*y_np1 + self.alpha[1]*Y[0] + self.alpha[2]*Y[1] + self.alpha[3]*Y[2] + self.alpha[4]*Y[3] - h*f(t_np1, y_np1)
   
 		y_np1, infodict, ier, _ = fsolve(func=F, x0=Y[0], full_output=True, xtol=self.tol, maxfev=self.maxit)
 		self.statistics["nfcns"] += infodict.get('nfev')
@@ -247,19 +247,28 @@ def rhs(t,y):
 	return np.array([y1dot, y2dot, y3dot, y4dot])
 
 # Spring constant
-k = 100.
+k = 10.
 
 # Initial conditions
-y0 = np.array([0.5, -1., 0., 0.])
+y0 = np.array([.5, -1, 0., 0.])
 t0 = 0.
-tf = 1.
+tf = 5.
 
 model = Explicit_Problem(rhs, y0, t0)
 model.name = 'Elastic Pendulum'
 
-exp_sim = BDF_3(model) # Create a BDF solver
+exp_sim = BDF_4(model) # Create a BDF solver
 t, y = exp_sim.simulate(tf)
+
 x = [states[0] for states in y]
 y = [states[1] for states in y]
-mpl.plot(x, y)
+
+mpl.plot(x, y, 'o', ls='-', lw=2, ms=6, markevery=[0,-1])
+mpl.plot([0, y0[0]], [0, y0[1]], ls='--', lw=1)
+mpl.xlabel('x', fontsize=14)
+mpl.ylabel('y', fontsize=14)
+mpl.title('Elastic pendulum for %i s, k=%i' %(tf, k), fontsize=16)
+mpl.axis([-1, 1, -1.5, 0])
+mpl.grid(True)
+
 mpl.show()
