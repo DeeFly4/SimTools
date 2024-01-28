@@ -17,7 +17,7 @@ def rhs(t,y):
 	return np.array([y1dot, y2dot, y3dot, y4dot])
 
 # Spring constant
-k = 50.
+k = 1500.
 
 # Initial conditions
 y0 = np.array([.5, -1, 0., 0.])
@@ -28,6 +28,9 @@ model = Explicit_Problem(rhs, y0, t0)
 model.name = 'Elastic Pendulum'
 
 sim = CVode(model)
+sim.atol = 1e-2
+sim.rtol = 1e-2
+# sim.maxord = 3
 
 t, y = sim.simulate(tf)
 x = [states[0] for states in y]
