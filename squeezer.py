@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 from __future__ import division
 import assimulo.implicit_ode as ai
-import  assimulo.problem as ap
+import assimulo.problem as ap
+from assimulo.solvers import IDA
 from scipy import *
-from numpy import array,zeros,hstack,sin,cos,sqrt,dot
+from numpy import array,zeros,ones,hstack,sin,cos,sqrt,dot
 import sys
 import os
 
@@ -13,27 +14,34 @@ class Seven_bar_mechanism(ap.Implicit_Problem):
 	Hairer, Vol. II, p. 533 ff, see also formula (7.11)
 	"""
 	problem_name='Squeezer'
+	
 	def __init__(self):
-		self.y0,self.yd0=self.init_squeezer()
+		self.y0, self.yd0=self.init_squeezer()
+		ap.Implicit_Problem.__init__(self, self.res, self.y0, self.yd0, 0.)
 
 	def init_squeezer(self):
-		y_1 = array([-0.0617138900142764496358948458001,  #  beta
-				0.,                                 #  theta
+		y_1 = array([-0.0617138900142764496358948458001,  #  Beta
+				0.,                                 #  Theta
 				0.455279819163070380255912382449,   # gamma
-				0.222668390165885884674473185609,   # phi
+				0.222668390165885884674473185609,   # Phi
 				0.487364979543842550225598953530,   # delta
 				-0.222668390165885884674473185609,  # Omega
-				1.23054744454982119249735015568])   #epsilon
+				1.23054744454982119249735015568])   # epsilon
+		
 		lamb = array([
 			98.5668703962410896057654982170,        # lambda[0]
 			-6.12268834425566265503114393122])       # lambda[1]
-		y=hstack((y_1,zeros((7,)),lamb,zeros((4,))))
-		yp=hstack((zeros(7,),array([
-			14222.4439199541138705911625887,        #  betadotdot
+		
+		y=hstack((y_1, zeros((7,)), lamb, zeros((4,))))
+		
+		yp=hstack((zeros(7,), array([
+			14222.4439199541138705911625887,        #  Betadotdot
 			-10666.8329399655854029433719415,       #  Thetadotdot
-			0.,0.,0.,0.,0.]),zeros((6,))))
-		return y,yp
-	def f(self,t, y, yp):
+			0.,0.,0.,0.,0.]), zeros((6,))))
+		
+		return y, yp
+	
+	def res(self, t, y, yp):
 		"""
 		Residual function of the 7-bar mechanism in
 		Hairer, Vol. II, p. 533 ff, see also formula (7.11)
@@ -43,7 +51,8 @@ class Seven_bar_mechanism(ap.Implicit_Problem):
 		# Inertia data
 		m1,m2,m3,m4,m5,m6,m7=.04325,.00365,.02373,.00706,.07050,.00706,.05498
 		i1,i2,i3,i4,i5,i6,i7=2.194e-6,4.410e-7,5.255e-6,5.667e-7,1.169e-5,5.667e-7,1.912e-5
-		# Geometry
+		
+  		# Geometry
 		xa,ya=-.06934,-.00227
 		xb,yb=-0.03635,.03273
 		xc,yc=.014,.072
@@ -54,8 +63,10 @@ class Seven_bar_mechanism(ap.Implicit_Problem):
 		u,ua,ub=4.e-2,1228.e-5,449.e-5
 		zf,zt=2.e-2,4.e-2
 		fa=1421.e-5
+		
 		# Driving torque
 		mom=0.033
+		
 		# Spring data
 		c0=4530.
 		lo=0.07785
@@ -69,6 +80,7 @@ class Seven_bar_mechanism(ap.Implicit_Problem):
 		sibeth = sin(beta+theta);cobeth = cos(beta+theta)
 		siphde = sin(phi+delta);cophde = cos(phi+delta)
 		siomep = sin(omega+epsilon);coomep = cos(omega+epsilon)
+		
 		# Mass matrix
 		m=zeros((7,7))
 		m[0,0] = m1*ra**2 + m2*(rr**2-2*da*rr*coth+da**2) + i1 + i2
@@ -83,7 +95,6 @@ class Seven_bar_mechanism(ap.Implicit_Problem):
 		m[6,6] = m6*((zf-fa)**2-2*u*(zf-fa)*siom+u**2) + m7*(ua**2+ub**2)+ i6 + i7
 
 		#   Applied forces
-
 		xd = sd*coga + sc*siga + xb
 		yd = sd*siga - sc*coga + yb
 		lang  = sqrt ((xd-xc)**2 + (yd-yc)**2)
@@ -100,7 +111,6 @@ class Seven_bar_mechanism(ap.Implicit_Problem):
 		m6*u*(zf-fa)*omp*(omp+2*epp)*coom])
 
 		#  constraint matrix  G
-
 		gp=zeros((6,7))
 
 		gp[0,0] = - rr*sibe + d*sibeth
@@ -136,9 +146,8 @@ class Seven_bar_mechanism(ap.Implicit_Problem):
 		g[5] = rr*sibe - d*sibeth - zf*siomep + u*coep - ya
 
 		#     Construction of the residual
-
 		res_1 = yp[0:7] - y[7:14]
-		res_2 = dot(m,yp[7:14])- ff[0:7]+dot(gp.T,lamb)
+		res_2 = dot(m, yp[7:14]) - ff[0:7] + dot(gp.T, lamb)
 		res_3 = g
 
 		return hstack((res_1,res_2,res_3))
@@ -146,7 +155,17 @@ class Seven_bar_mechanism(ap.Implicit_Problem):
 ### Test
 squeezer = Seven_bar_mechanism()
 
-y, y_prime = squeezer.init_squeezer()
-t = 0.
-# test f
-squeezer.f(t, y, y_prime)
+# y, yp = squeezer.init_squeezer()
+# print(y)
+
+sim = IDA(squeezer)
+sim.algvar = hstack((ones((7,)), zeros((9,)), ones((4,))))
+sim.atol = hstack((1.e-6*ones((7,)), 1.e5*ones((9,)), 1.e-6*ones((4,))))
+
+# print(sim.algvar)
+# print(sim.atol)
+
+tfinal = 0.03
+ncp = 500
+t, y, yd = sim.simulate(tfinal, ncp)
+sim.plot()
