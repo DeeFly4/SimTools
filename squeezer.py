@@ -3,8 +3,9 @@ from __future__ import division
 import assimulo.implicit_ode as ai
 import assimulo.problem as ap
 from assimulo.solvers import IDA
+import matplotlib.pyplot as mpl
 from scipy import *
-from numpy import array,zeros,ones,hstack,sin,cos,sqrt,dot
+from numpy import array,zeros,ones,hstack,sin,cos,sqrt,dot,pi
 import sys
 import os
 
@@ -18,6 +19,7 @@ class Seven_bar_mechanism(ap.Implicit_Problem):
 	def __init__(self):
 		self.y0, self.yd0=self.init_squeezer()
 		ap.Implicit_Problem.__init__(self, self.res, self.y0, self.yd0, 0.)
+		self.name = self.problem_name
 
 	def init_squeezer(self):
 		y_1 = array([-0.0617138900142764496358948458001,  #  Beta
@@ -148,25 +150,33 @@ class Seven_bar_mechanism(ap.Implicit_Problem):
 		#     Construction of the residual
 		res_1 = yp[0:7] - y[7:14]
 		res_2 = dot(m, yp[7:14]) - ff[0:7] + dot(gp.T, lamb)
-		res_3 = g
-		# res_3 = dot(gp, y[7:14])
+		# res_3 = g # index-3
+		res_3 = dot(gp, y[7:14]) # index-2
 
 		return hstack((res_1,res_2,res_3))
 
-### Test
 squeezer = Seven_bar_mechanism()
-
-# y, yp = squeezer.init_squeezer()
-# print(y)
-
 sim = IDA(squeezer)
-sim.algvar = hstack((ones((7,)), zeros((13,))))
-sim.atol = hstack((1.e-6*ones((7,)), 1.e5*ones((13,))))
 
-# print(sim.algvar)
-# print(sim.atol)
+# Change these depending on index-3 or index-2
+sim.algvar = hstack((ones((14,)), zeros((6,))))
+# sim.atol = hstack((1.e-6*ones((7,)), 1.e-6*ones((13,))))
+sim.suppress_alg = True
 
-tfinal = 0.03
-ncp = 500
-t, y, yd = sim.simulate(tfinal, ncp)
-sim.plot()
+tf = 0.03
+ncp = 1000
+t, y, yd = sim.simulate(tf, ncp)
+
+angles = [states[0:7] for states in y]
+
+mpl.plot(t, angles)
+mpl.hlines(0, 0, tf, ls='--', colors='k')
+
+mpl.xlabel('Time [s]', fontsize=14)
+mpl.ylabel('Angle [mod 2pi]', fontsize=14)
+
+mpl.title('Squeezer angles', fontsize=16)
+mpl.axis([0, tf, -1, 1])
+mpl.grid(True)
+
+mpl.show()
