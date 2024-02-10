@@ -110,8 +110,8 @@ class Seven_bar_mechanism(ap.Implicit_Problem):
 		- m6*u*(zf-fa)*epp**2*coom,
 		m6*u*(zf-fa)*omp*(omp+2*epp)*coom])
 
-		#  constraint matrix  G
-		gp=zeros((6,7))
+		#  constraint matrix G
+		gp = zeros((6,7))
 
 		gp[0,0] = - rr*sibe + d*sibeth
 		gp[0,1] = d*sibeth
@@ -149,6 +149,7 @@ class Seven_bar_mechanism(ap.Implicit_Problem):
 		res_1 = yp[0:7] - y[7:14]
 		res_2 = dot(m, yp[7:14]) - ff[0:7] + dot(gp.T, lamb)
 		res_3 = g
+		# res_3 = dot(gp, y[7:14])
 
 		return hstack((res_1,res_2,res_3))
 
@@ -159,8 +160,8 @@ squeezer = Seven_bar_mechanism()
 # print(y)
 
 sim = IDA(squeezer)
-sim.algvar = hstack((ones((7,)), zeros((9,)), ones((4,))))
-sim.atol = hstack((1.e-6*ones((7,)), 1.e5*ones((9,)), 1.e-6*ones((4,))))
+sim.algvar = hstack((ones((7,)), zeros((13,))))
+sim.atol = hstack((1.e-6*ones((7,)), 1.e5*ones((13,))))
 
 # print(sim.algvar)
 # print(sim.atol)
