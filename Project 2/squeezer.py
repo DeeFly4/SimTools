@@ -2,7 +2,7 @@
 from __future__ import division
 import assimulo.implicit_ode as ai
 import assimulo.problem as ap
-from assimulo.solvers import IDA, RungeKutta4
+from assimulo.solvers import IDA
 import matplotlib.pyplot as mpl
 from scipy import *
 from numpy import array,zeros,ones,hstack,sin,cos,sqrt,dot,pi
@@ -104,7 +104,7 @@ class Seven_bar_mechanism(ap.Implicit_Problem):
 		force = - c0 * (lang - lo)/lang
 		fx = force * (xd-xc)
 		fy = force * (yd-yc)
-		ff=array([
+		ff = array([
 		mom - m2*da*rr*thp*(thp+2*bep)*sith,
 		m2*da*rr*bep**2*sith,
 		fx*(sc*coga - sd*siga) + fy*(sd*coga + sc*siga),
@@ -161,10 +161,9 @@ class Seven_bar_mechanism(ap.Implicit_Problem):
 		# Construction of the residual
 		res_1 = yp[0:7] - y[7:14]
 		res_2 = dot(m, yp[7:14]) - ff[0:7] + dot(gp.T, lamb)
-		# res_3 = g # index-3
-		res_3 = dot(gp, y[7:14]) # index-2
+		res_3 = g # index-3
+		# res_3 = dot(gp, y[7:14]) # index-2
 		# res_3 = g_qq + dot(gp, yp[7:14]) # index-1
-
 
 		return hstack((res_1,res_2,res_3))
 
@@ -173,7 +172,7 @@ sim = IDA(squeezer)
 
 # Change these depending on index-3 or index-2
 sim.algvar = hstack((ones((14,)), zeros((6,))))
-# sim.atol = hstack((1.e-6*ones((7,)), 1.e-6*ones((13,))))
+sim.atol = hstack((1.e-6*ones((7,)), 1.e5*ones((13,))))
 sim.suppress_alg = True
 
 tf = 0.03
@@ -183,16 +182,23 @@ t, y, yd = sim.simulate(tf, ncp)
 angles = [states[0:7] for states in y]
 lambdas = [states[14:20] for states in y]
 
-# mpl.plot(t, angles)
-mpl.plot(t, angles)
-mpl.hlines(0, 0, tf, ls='--', colors='k')
+fig, (ax1, ax2) = mpl.subplots(1, 2)
 
-mpl.xlabel('Time [s]', fontsize=14)
-mpl.ylabel('Angle [mod 2pi]', fontsize=14)
+ax1.plot(t, angles, lw=2)
+ax2.plot(t, lambdas, lw=2)
+ax1.hlines(0, 0, tf, ls='--', colors='k')
+ax2.hlines(0, 0, tf, ls='--', colors='k')
 
-mpl.title('Squeezer angles', fontsize=16)
-# mpl.title('Lagrange multipliers', fontsize=16)
-mpl.axis([0, tf, -1, 1])
-mpl.grid(True)
+ax1.set_xlabel('Time [s]', fontsize=16)
+ax1.set_ylabel('Angle [mod 2pi]', fontsize=16)
+ax2.set_xlabel('Time [s]', fontsize=16)
+
+ax1.set_title('Squeezer angles', fontsize=18)
+ax2.set_title('Lagrange multipliers', fontsize=18)
+
+ax1.axis([0, tf, -1, 1])
+
+ax1.grid(True)
+ax2.grid(True)
 
 mpl.show()

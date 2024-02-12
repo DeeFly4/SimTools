@@ -122,7 +122,7 @@ exp_mod.name = 'Simple BDF-2 Example'
 def pend(t,y):
 	#g=9.81    l=0.7134354980239037
 	gl=13.7503671
-	return np.array([y[1],-gl*np.sin(y[0])])
+	return np.array([y[1], -gl*np.sin(y[0])])
 	
 pend_mod=Explicit_Problem(pend, y0=np.array([2.*np.pi,1.]))
 pend_mod.name='Nonlinear Pendulum'
