@@ -2,12 +2,10 @@
 from __future__ import division
 import assimulo.implicit_ode as ai
 import assimulo.problem as ap
-from assimulo.solvers import IDA
+from assimulo.solvers import IDA, RungeKutta4
 import matplotlib.pyplot as mpl
 from scipy import *
 from numpy import array,zeros,ones,hstack,sin,cos,sqrt,dot,pi
-import sys
-import os
 
 class Seven_bar_mechanism(ap.Implicit_Problem):
 	"""
@@ -74,14 +72,17 @@ class Seven_bar_mechanism(ap.Implicit_Problem):
 		lo=0.07785
 
 		# Initial computations and assignments
-		beta,theta,gamma,phi,delta,omega,epsilon=y[0:7]
-		bep,thp,gap,php,dep,omp,epp=y[7:14]
-		lamb=y[14:20]
-		sibe,sith,siga,siph,side,siom,siep=sin(y[0:7])
-		cobe,coth,coga,coph,code,coom,coep=cos(y[0:7])
-		sibeth = sin(beta+theta);cobeth = cos(beta+theta)
-		siphde = sin(phi+delta);cophde = cos(phi+delta)
-		siomep = sin(omega+epsilon);coomep = cos(omega+epsilon)
+		beta, theta, gamma, phi, delta, omega, epsilon = y[0:7]
+		bep, thp, gap, php, dep, omp, epp = y[7:14]
+		lamb = y[14:20]
+		sibe, sith, siga, siph, side, siom, siep = sin(y[0:7])
+		cobe, coth, coga, coph, code, coom, coep = cos(y[0:7])
+		sibeth = sin(beta+theta)
+		cobeth = cos(beta+theta)
+		siphde = sin(phi+delta)
+		cophde = cos(phi+delta)
+		siomep = sin(omega+epsilon)
+		coomep = cos(omega+epsilon)
 		
 		# Mass matrix
 		m=zeros((7,7))
@@ -112,7 +113,17 @@ class Seven_bar_mechanism(ap.Implicit_Problem):
 		- m6*u*(zf-fa)*epp**2*coom,
 		m6*u*(zf-fa)*omp*(omp+2*epp)*coom])
 
-		#  constraint matrix G
+		# g_qq(q)(qdot, qdot) for index-1
+		g_qq = zeros((6,))
+
+		g_qq[0] = -rr*cobe*bep**2 + d*cobeth*(bep+thp)**2 + ss*siga*gap**2
+		g_qq[1] = -rr*sibe*bep**2 + d*sibeth*(bep+thp)**2 - ss*coga*gap**2
+		g_qq[2] = -rr*cobe*bep**2 + d*cobeth*(bep+thp)**2 + e*siphde*(php+dep)**2 + zt*code*dep**2
+		g_qq[3] = -rr*sibe*bep**2 + d*sibeth*(bep+thp)**2 - e*cophde*(php+dep)**2 + zt*side*dep**2
+		g_qq[4] = -rr*cobe*bep**2 + d*cobeth*(bep+thp)**2 + zf*coomep*(omp+epp)**2 + u*siep*epp**2
+		g_qq[5] = -rr*sibe*bep**2 + d*sibeth*(bep+thp)**2 + zf*siomep*(omp+epp)**2 -  u*coep*epp**2
+
+		#  Jacobian matrix G(q)
 		gp = zeros((6,7))
 
 		gp[0,0] = - rr*sibe + d*sibeth
@@ -138,7 +149,7 @@ class Seven_bar_mechanism(ap.Implicit_Problem):
 		gp[5,5] = - zf*coomep
 		gp[5,6] = - zf*coomep - u*siep
 
-		#     Index-3 constraint
+		# algebraic constraints for index-3
 		g=zeros((6,))
 		g[0] = rr*cobe - d*cobeth - ss*siga - xb
 		g[1] = rr*sibe - d*sibeth + ss*coga - yb
@@ -147,11 +158,13 @@ class Seven_bar_mechanism(ap.Implicit_Problem):
 		g[4] = rr*cobe - d*cobeth - zf*coomep - u*siep - xa
 		g[5] = rr*sibe - d*sibeth - zf*siomep + u*coep - ya
 
-		#     Construction of the residual
+		# Construction of the residual
 		res_1 = yp[0:7] - y[7:14]
 		res_2 = dot(m, yp[7:14]) - ff[0:7] + dot(gp.T, lamb)
 		# res_3 = g # index-3
 		res_3 = dot(gp, y[7:14]) # index-2
+		# res_3 = g_qq + dot(gp, yp[7:14]) # index-1
+
 
 		return hstack((res_1,res_2,res_3))
 
@@ -168,7 +181,9 @@ ncp = 1000
 t, y, yd = sim.simulate(tf, ncp)
 
 angles = [states[0:7] for states in y]
+lambdas = [states[14:20] for states in y]
 
+# mpl.plot(t, angles)
 mpl.plot(t, angles)
 mpl.hlines(0, 0, tf, ls='--', colors='k')
 
@@ -176,6 +191,7 @@ mpl.xlabel('Time [s]', fontsize=14)
 mpl.ylabel('Angle [mod 2pi]', fontsize=14)
 
 mpl.title('Squeezer angles', fontsize=16)
+# mpl.title('Lagrange multipliers', fontsize=16)
 mpl.axis([0, tf, -1, 1])
 mpl.grid(True)
 
