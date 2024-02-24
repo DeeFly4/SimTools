@@ -60,13 +60,18 @@ class Newmark(Explicit_ODE_2nd):
  
 	def integrate(self, t, u, up, tf, opts):
 		h = min(self.h, abs(tf-t))
-		upp = inv(self.M)@self.f(0) - self.C@up - self.K@u
+		upp = inv(self.M)@(self.f(0) - self.K@u)
+		if self.C != 0 and self.Beta != 0:
+			upp -= inv(self.M)@self.C@up
 
 		tres = []
 		ures = []
   
-		while (t < tf):
-			t, u, up, upp = self.step(t, u, up, upp, h)
+		while t < tf:
+			if self.C == 0 and self.Beta == 0:
+				t, u, up, upp = self.explicit_step(t, u, up, upp, h)
+			else:
+				t, u, up, upp = self.implicit_step(t, u, up, upp, h)
 
 			tres.append(t)
 			ures.append(u.copy())
@@ -78,8 +83,15 @@ class Newmark(Explicit_ODE_2nd):
 	def simulate(self, tf):
 		flag, t, u = self.integrate(self.t0, self.u0, self.up0, tf, opts=None)
 		return t, u
- 
-	def step(self, t, u, up, upp, h):
+	
+	def explicit_step(self, t, u, up, upp, h):
+		u_next = u + up*h + upp*h**2/2
+		upp_next = inv(self.M)@(self.f(t) - self.K@u)
+		up_next = up + upp*h*(1-self.gamma) + self.gamma*upp_next*h
+
+		return t+h, u_next, up_next, upp_next
+	
+	def implicit_step(self, t, u, up, upp, h):
 		bh = self.Beta*h
 		bh2 = self.Beta*h**2
 		inv2bmo = 1/(2*self.Beta) - 1
@@ -95,3 +107,57 @@ class Newmark(Explicit_ODE_2nd):
 		upp_next = (u_next - u)/bh2 - up/bh - upp*inv2bmo
   
 		return t_next, u_next, up_next, upp_next
+
+class HHT_alpha(Explicit_ODE_2nd):
+	alpha = -1/3
+	Beta = (1-alpha)**2/4
+	gamma = 1/2 - alpha
+	h = 1e-3
+
+	def __init__(self, problem):
+		Explicit_ODE_2nd.__init__(self, problem)
+		self.M = np.diag(self.M)
+		self.C = np.diag(self.C)
+		self.K = np.diag(self.K)
+  
+		self.up = self.up0
+		
+		self.invA = inv(self.M / (self.Beta*self.h**2) + self.gamma*self.C / (self.Beta*self.h) + (1+self.alpha)*self.K)
+
+	def step(self, t, u, up, upp, h):
+		bh = self.Beta*h
+		bh2 = self.Beta*h**2
+		inv2bmo = 1/(2*self.Beta) - 1
+		omgb = 1 - self.gamma/self.Beta
+		omg2b = 1 - self.gamma/(2*self.Beta)
+  
+		t_next = t+h
+
+		Bn = self.f(t_next) + self.M @ (u/bh2 + up/bh + upp*inv2bmo) + self.C @ (self.gamma*u/bh - up*omgb - h*upp*omg2b) + self.alpha*self.K@u
+		
+		u_next = self.invA @ Bn
+		up_next = self.gamma*(u_next - u)/bh + up*omgb + h*upp*omg2b
+		upp_next = (u_next - u)/bh2 - up/bh - upp*inv2bmo
+  
+		return t_next, u_next, up_next, upp_next
+
+	def integrate(self, t, u, up, tf, opts):
+		h = min(self.h, abs(tf-t))
+		upp = inv(self.M)@(self.f(0) - self.K@u - self.C@up)
+
+		tres = []
+		ures = []
+  
+		while t < tf:
+			t, u, up, upp = self.step(t, u, up, upp, h)
+
+			tres.append(t)
+			ures.append(u.copy())
+
+			h = min(self.h, abs(tf-t))
+
+		return ID_PY_OK, tres, ures
+	
+	def simulate(self, tf):
+		flag, t, u = self.integrate(self.t0, self.u0, self.up0, tf, opts=None)
+		return t, u
