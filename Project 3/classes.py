@@ -9,8 +9,8 @@ import matplotlib.pyplot as mpl
 
 class Explicit_Problem_2nd(Explicit_Problem):
 	def __init__(self, M, C, K, f, u0, up0, t0):
-		self.a = -np.divide(K, M)
-		self.b = -np.divide(C, M)
+		self.a = -inv(M)@K
+		self.b = -inv(M)@C
 
 		self.u0 = u0
 		self.up0 = up0
@@ -27,7 +27,7 @@ class Explicit_Problem_2nd(Explicit_Problem):
 		up = y[len(y)//2:len(y)]
 
 		y1dot = up
-		y2dot = self.a*u + self.b*up + self.f(t) / self.M
+		y2dot = self.a@u + self.b@up + inv(self.M)@self.f(t)
 
 		return hstack((y1dot, y2dot))
 
@@ -49,10 +49,6 @@ class Newmark(Explicit_ODE_2nd):
 	
 	def __init__(self, problem):
 		Explicit_ODE_2nd.__init__(self, problem)
-		self.M = np.diag(self.M)
-		self.C = np.diag(self.C)
-		self.K = np.diag(self.K)
-  
 		self.up = self.up0
 		
 		self.invA = inv(self.M / (self.Beta*self.h**2) + self.gamma*self.C / (self.Beta*self.h) + self.K)
@@ -61,14 +57,14 @@ class Newmark(Explicit_ODE_2nd):
 	def integrate(self, t, u, up, tf, opts):
 		h = min(self.h, abs(tf-t))
 		upp = inv(self.M)@(self.f(0) - self.K@u)
-		if self.C != 0 and self.Beta != 0:
+		if self.C.any() != 0 and self.Beta != 0:
 			upp -= inv(self.M)@self.C@up
 
 		tres = []
 		ures = []
   
 		while t < tf:
-			if self.C == 0 and self.Beta == 0:
+			if self.C.all() == 0 and self.Beta == 0:
 				t, u, up, upp = self.explicit_step(t, u, up, upp, h)
 			else:
 				t, u, up, upp = self.implicit_step(t, u, up, upp, h)
@@ -116,9 +112,6 @@ class HHT_alpha(Explicit_ODE_2nd):
 
 	def __init__(self, problem):
 		Explicit_ODE_2nd.__init__(self, problem)
-		self.M = np.diag(self.M)
-		self.C = np.diag(self.C)
-		self.K = np.diag(self.K)
   
 		self.up = self.up0
 		

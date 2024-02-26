@@ -6,12 +6,12 @@ import matplotlib.pyplot as mpl
 def f(t):
 	return 0
 
-M = 1
-C = 3
-K = 2
+M = np.array([1, 1])
+C = np.array([3, 4])
+K = np.array([2, 4])
 
-u0 = 1
-up0 = 1
+u0 = np.ones(2,)
+up0 = np.ones(2,)
 
 t0 = 0
 tf = 5
