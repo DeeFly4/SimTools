@@ -10,7 +10,7 @@ os.environ['DUNE_LOG_LEVEL'] = 'info'
 print("Using DUNE_LOG_LEVEL=",os.getenv('DUNE_LOG_LEVEL'))
 
 import setuptools
-import matplotlib.pyplot as pl
+import matplotlib.pyplot as mpl
 import numpy as np
 
 from ufl import *
@@ -24,7 +24,7 @@ from dune.fem.operator import linear as linearOperator
 
 import scipy.sparse as ssp
 import scipy.sparse.linalg as ssl
-pl.close('all')
+mpl.close('all')
 
 class elastodynamic_beam:
     # Elastic parameters
@@ -154,21 +154,35 @@ class elastodynamic_beam:
         beam.plot()
 
 if __name__ == '__main__':
+    from classes import Explicit_Problem_2nd, Newmark, HHT_alpha
+    import assimulo.solvers as aso
+    import assimulo.ode as aode
+    
     # test section using build-in ODE solver from Assimulo
     t_end = 8
     beam_class = elastodynamic_beam(4, T=t_end)
 
-    import assimulo.solvers as aso
-    import assimulo.ode as aode
-
+    def f(t):
+        return t*beam_class.F if t < beam_class.cutoff_Tc else np.zeros(beam_class.ndofs)
+    
+    u0 = np.zeros(beam_class.ndofs)
+    up0 = np.zeros(beam_class.ndofs)
+    
+    M = ssp.csr_matrix.toarray(beam_class.Mass_mat)
+    C = ssp.csr_matrix.toarray(beam_class.Stiffness_mat)
+    K = ssp.csr_matrix.toarray(beam_class.Dampening_mat)
+    
     # y , ydot
     beam_problem = aode.Explicit_Problem(beam_class.rhs,y0=np.zeros((2*beam_class.ndofs,)))
     beam_problem.name='Modified Elastodyn example from DUNE-FEM'
-
     beamCV = aso.ImplicitEuler(beam_problem) # CVode solver instance
-    #beamCV = aso.Radau5ODE(beam_problem)
     beamCV.h = 0.05 # constant step size here
-    tt, y = beamCV.simulate(t_end)
+    
+    beam_problem_2nd = Explicit_Problem_2nd(M, C, K, f, u0, up0, 0)
+    sim = HHT_alpha(beam_problem_2nd)
+    sim.h = 1e-3
+    
+    tt, y = sim.simulate(t_end)
 
     disp_tip = []
     plottime = 0
@@ -176,12 +190,13 @@ if __name__ == '__main__':
     for i, t in enumerate(tt):
         disp_tip.append(beam_class.evaluateAt(y[i], [1, 0.05]))
         if t > plottime:
-            print(f"Beam position at t={t}")
-            beam_class.plotBeam( y[i] )
+            # print(f"Beam position at t={t}")
+            # beam_class.plotBeam( y[i] )
             plottime += plotstep
 
-    pl.figure()
-    pl.plot(tt, disp_tip, '-b')
-    pl.title('Displacement of beam tip over time')
-    pl.xlabel('t')
-    pl.savefig('displacement.png', dpi = 200)
+    mpl.figure()
+    mpl.plot(tt, disp_tip, '-b')
+    mpl.title('Displacement of beam tip over time')
+    mpl.xlabel('t')
+    # mpl.savefig('displacement.png', dpi = 200)
+    mpl.show()

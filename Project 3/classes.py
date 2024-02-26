@@ -102,7 +102,7 @@ class Newmark(Explicit_ODE_2nd):
 		return t_next, u_next, up_next, upp_next
 
 class HHT_alpha(Explicit_ODE_2nd):
-	alpha = -1/3
+	alpha = -0.2
 	Beta = (1-alpha)**2/4
 	gamma = 1/2 - alpha
 	h = 1e-3
