@@ -25,7 +25,7 @@ class Explicit_Problem_2nd(Explicit_Problem):
 		up = y[len(y)//2:len(y)]
 
 		y1dot = up
-		y2dot = solve(self.M, self.K@u) + solve(self.M, self.C@up) + solve(self.M, self.f(t))
+		y2dot = solve(self.M, -self.K@u - self.C@up + self.f(t))
 
 		return hstack((y1dot, y2dot))
 
