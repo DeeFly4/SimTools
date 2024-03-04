@@ -169,17 +169,18 @@ if __name__ == '__main__':
     up0 = np.zeros(beam_class.ndofs)
     
     M = ssp.csr_matrix.toarray(beam_class.Mass_mat)
-    C = ssp.csr_matrix.toarray(beam_class.Stiffness_mat)
-    K = ssp.csr_matrix.toarray(beam_class.Dampening_mat)
+    C = ssp.csr_matrix.toarray(beam_class.Dampening_mat)
+    K = ssp.csr_matrix.toarray(beam_class.Stiffness_mat)
     
-    # y , ydot
+    # First-order problem with built-in classes
     beam_problem = aode.Explicit_Problem(beam_class.rhs,y0=np.zeros((2*beam_class.ndofs,)))
     beam_problem.name='Modified Elastodyn example from DUNE-FEM'
     beamCV = aso.ImplicitEuler(beam_problem) # CVode solver instance
-    beamCV.h = 0.05 # constant step size here
+    beamCV.h = 0.1 # constant step size here
     
+    # Second-order problem with my class
     beam_problem_2nd = Explicit_Problem_2nd(M, C, K, f, u0, up0, 0)
-    sim = HHT_alpha(beam_problem_2nd)
+    sim = Newmark(beam_problem_2nd)
     sim.h = 1e-3
     
     tt, y = sim.simulate(t_end)
@@ -194,9 +195,13 @@ if __name__ == '__main__':
             # beam_class.plotBeam( y[i] )
             plottime += plotstep
 
-    mpl.figure()
-    mpl.plot(tt, disp_tip, '-b')
-    mpl.title('Displacement of beam tip over time')
-    mpl.xlabel('t')
-    # mpl.savefig('displacement.png', dpi = 200)
+    mpl.plot(tt, disp_tip, '-b', lw=2)
+    mpl.hlines(0, 0, t_end, ls='--', colors='k')
+    
+    mpl.title('Displacement of beam tip over time', fontsize=16)
+    mpl.xlabel('Time [s]', fontsize=14)
+    
+    mpl.axis([0, t_end, -0.5, 0.5])
+
+    mpl.grid(True)
     mpl.show()

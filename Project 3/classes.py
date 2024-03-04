@@ -41,8 +41,8 @@ class Explicit_ODE_2nd(Explicit_ODE):
 		self.t0 = problem.t0
 
 class Newmark(Explicit_ODE_2nd):
-	Beta = 1/4
 	gamma = 1/2
+	Beta = 1/4
 	h = 1e-3
 	
 	def __init__(self, problem):
@@ -51,14 +51,16 @@ class Newmark(Explicit_ODE_2nd):
 		
 		self.A = self.M / (self.Beta*self.h**2) + self.gamma*self.C / (self.Beta*self.h) + self.K
  
-	def integrate(self, t, u, up, tf, opts):
-		h = min(self.h, abs(tf-t))
-		upp = solve(self.M, self.f(0) - self.K@u)
+	def integrate(self, t0, u0, up0, tf, opts):
+		h = min(self.h, abs(tf-t0))
+		upp0 = solve(self.M, self.f(0) - self.K@u0)
 		if self.C.any() != 0 and self.Beta != 0:
-			upp -= solve(self.M, self.C@up)
+			upp0 -= solve(self.M, self.C@up0)
 
 		tres = []
 		ures = []
+  
+		t, u, up, upp = t0, u0, up0, upp0
   
 		while t < tf:
 			if self.C.all() == 0 and self.Beta == 0:
@@ -102,7 +104,7 @@ class Newmark(Explicit_ODE_2nd):
 		return t_next, u_next, up_next, upp_next
 
 class HHT_alpha(Explicit_ODE_2nd):
-	alpha = -0.2
+	alpha = -1/3
 	Beta = (1-alpha)**2/4
 	gamma = 1/2 - alpha
 	h = 1e-3

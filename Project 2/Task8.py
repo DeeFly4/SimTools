@@ -145,7 +145,7 @@ mpl.hlines(0, 0, tf, ls='--', colors='k')
 mpl.xlabel('Time [s]', fontsize=16)
 mpl.xlabel('Angle [mod 2pi]', fontsize=16)
 
-mpl.title('Squeezer angles', fontsize=1)
+mpl.title('Squeezer angles', fontsize=16)
 
 mpl.axis([0, tf, -1, 1])
 
