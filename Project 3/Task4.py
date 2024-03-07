@@ -9,7 +9,7 @@ from scipy.linalg import solve
 import matplotlib.pyplot as mpl
 
 k = 1000
-h = 1e-3
+h = 6e-2
 
 def lambdafunc(x,y):
     hyp = np.hypot(x,y)
@@ -17,8 +17,8 @@ def lambdafunc(x,y):
 
 def step(t, u, up, upp, h):
     u_next = u + up * h + upp * h**2/2
-    upp_next = np.array([0, -1]) - lambdafunc(u[0], u[1]) * u
-    up_next = up + upp * h/2 + upp_next*h/2
+    upp_next = np.array([0, -1]) - lambdafunc(u_next[0], u_next[1]) * u_next
+    up_next = up + (upp + upp_next)*h/2
     
     return t+h, u_next, up_next, upp_next
 
