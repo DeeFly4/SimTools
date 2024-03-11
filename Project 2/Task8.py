@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 from __future__ import division
 from assimulo.problem import Explicit_Problem
-from assimulo.solvers import RungeKutta4
+from assimulo.solvers import RungeKutta4, RungeKutta34
 import matplotlib.pyplot as mpl
 from scipy.linalg import solve
-from numpy import array,zeros,ones,block,hstack,sin,cos,sqrt,dot,pi
+from numpy import array,zeros,block,hstack,sin,cos,sqrt
 
 # Inertia data
 m1,m2,m3,m4,m5,m6,m7=.04325,.00365,.02373,.00706,.07050,.00706,.05498
@@ -119,23 +119,23 @@ def rhs(t, y):
 	g_qq[5] = -rr*sibe*bep**2 + d*sibeth*(bep+thp)**2 + zf*siomep*(omp+epp)**2 -  u*coep*epp**2
 
 	A = block([[m, gp.T], [gp, zeros((6,6))]])
-	b = block([[ff.T], [-g_qq.T]])
+	b = hstack((ff, -g_qq))
 
 	wlam = solve(A, b)
-	w = wlam[0:7]
+	w = wlam[:7]
 
-	qdot = y[7:14]
+	qdot = y[7:]
 	vdot = w
     
-	return block([qdot, vdot])
+	return hstack((qdot, vdot))
 
 y0 = init_squeezer()
 tf = 0.03
 
 model = Explicit_Problem(rhs, y0, 0)
-rk4 = RungeKutta4(model)
-rk4.h = 1e-3
-t, y = rk4.simulate(tf)
+rk = RungeKutta4(model)
+rk.h = 1e-4 # smaller than 1e-3!
+t, y = rk.simulate(tf)
 
 angles = [states[0:7] for states in y]
 
