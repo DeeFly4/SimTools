@@ -12,15 +12,15 @@ k = 1000
 h = 6e-2
 
 def lambdafunc(x,y):
-    hyp = np.hypot(x,y)
-    return k*(hyp-1)/hyp
+	hyp = np.hypot(x,y)
+	return k*(hyp-1)/hyp
 
 def step(t, u, up, upp, h):
-    u_next = u + up * h + upp * h**2/2
-    upp_next = np.array([0, -1]) - lambdafunc(u_next[0], u_next[1]) * u_next
-    up_next = up + (upp + upp_next)*h/2
-    
-    return t+h, u_next, up_next, upp_next
+	u_next = u + up * h + upp * h**2/2
+	upp_next = np.array([0, -1]) - lambdafunc(u_next[0], u_next[1]) * u_next
+	up_next = up + (upp + upp_next)*h/2
+	
+	return t+h, u_next, up_next, upp_next
 
 t0 = 0
 tf = 5
@@ -36,12 +36,12 @@ ures = []
 t, u, up, upp = t0, u0, up0, upp0
 
 while t < tf:
-    t, u, up, upp = step(t, u, up, upp, h)
-    
-    tres.append(t)
-    ures.append(u.copy())
-    
-    h = min(h, abs(tf-t))
+	t, u, up, upp = step(t, u, up, upp, h)
+	
+	tres.append(t)
+	ures.append(u.copy())
+	
+	h = min(h, abs(tf-t))
 
 x = [states[0] for states in ures]
 y = [states[1] for states in ures]

@@ -77,7 +77,7 @@ v = TestFunction(space)
 equation = inner(sigma(u), epsilon(v))*dx == dot(as_vector([0,-rho*g]),v)*dx
 
 scheme = solutionScheme([equation, dbc], solver='cg',
-            parameters = {"newton.linear.preconditioning.method": "ilu"} )
+			parameters = {"newton.linear.preconditioning.method": "ilu"} )
 info = scheme.solve(target=displacement)
 
 

@@ -60,35 +60,35 @@ order = 1
 
 # <codecell>
 def setup():
-    vertices = numpy.zeros((8, 2))
-    vertices[0] = [0, 0]
-    for i in range(0, 7):
-        vertices[i+1] = [math.cos(cornerAngle/6*math.pi/180*i),
-                         math.sin(cornerAngle/6*math.pi/180*i)]
-    triangles = numpy.array([[2,1,0], [0,3,2], [4,3,0],
-                             [0,5,4], [6,5,0], [0,7,6]])
+	vertices = numpy.zeros((8, 2))
+	vertices[0] = [0, 0]
+	for i in range(0, 7):
+		vertices[i+1] = [math.cos(cornerAngle/6*math.pi/180*i),
+						 math.sin(cornerAngle/6*math.pi/180*i)]
+	triangles = numpy.array([[2,1,0], [0,3,2], [4,3,0],
+							 [0,5,4], [6,5,0], [0,7,6]])
 
-    domain = {"vertices": vertices, "simplices": triangles}
-    gridView = adaptiveGridView( leafGridView(domain) )
-    gridView.hierarchicalGrid.globalRefine(2)
-    space = solutionSpace(gridView, order=order, storage="istl")
+	domain = {"vertices": vertices, "simplices": triangles}
+	gridView = adaptiveGridView( leafGridView(domain) )
+	gridView.hierarchicalGrid.globalRefine(2)
+	space = solutionSpace(gridView, order=order, storage="istl")
 
-    from dune.fem.scheme import galerkin as solutionScheme
-    u = TrialFunction(space)
-    v = TestFunction(space)
-    x = SpatialCoordinate(space.cell())
+	from dune.fem.scheme import galerkin as solutionScheme
+	u = TrialFunction(space)
+	v = TestFunction(space)
+	x = SpatialCoordinate(space.cell())
 
-    # exact solution for this angle
-    Phi = cornerAngle / 180 * pi
-    phi = atan_2(x[1], x[0]) + conditional(x[1] < 0, 2*pi, 0)
-    exact = dot(x, x)**(pi/2/Phi) * sin(pi/Phi * phi)
-    a = dot(grad(u), grad(v)) * dx
+	# exact solution for this angle
+	Phi = cornerAngle / 180 * pi
+	phi = atan_2(x[1], x[0]) + conditional(x[1] < 0, 2*pi, 0)
+	exact = dot(x, x)**(pi/2/Phi) * sin(pi/Phi * phi)
+	a = dot(grad(u), grad(v)) * dx
 
-    # set up the scheme
-    laplace = solutionScheme([a==0, DirichletBC(space, exact, 1)], solver="cg",
-                parameters={"newton.linear.preconditioning.method":"amg-ilu"})
-    uh = space.interpolate([0], name="solution")
-    return uh, exact, laplace
+	# set up the scheme
+	laplace = solutionScheme([a==0, DirichletBC(space, exact, 1)], solver="cg",
+				parameters={"newton.linear.preconditioning.method":"amg-ilu"})
+	uh = space.interpolate([0], name="solution")
+	return uh, exact, laplace
 
 
 # <markdowncell>
@@ -109,12 +109,12 @@ h1error = uflFunction(uh.space.gridView, name="h1error", order=uh.space.order, u
 errorGlobal = []
 dofsGlobal  = []
 for count in range(3):
-    laplace.solve(target=uh)
-    error = math.sqrt(integrate(uh.space.gridView, h1error, 5))
-    errorGlobal += [error]
-    dofsGlobal  += [uh.space.size]
-    print(count, ": size=", uh.space.gridView.size(0), "error=", error)
-    uh.plot()
-    fem.globalRefine(1,uh)
+	laplace.solve(target=uh)
+	error = math.sqrt(integrate(uh.space.gridView, h1error, 5))
+	errorGlobal += [error]
+	dofsGlobal  += [uh.space.size]
+	print(count, ": size=", uh.space.gridView.size(0), "error=", error)
+	uh.plot()
+	fem.globalRefine(1,uh)
 
 
