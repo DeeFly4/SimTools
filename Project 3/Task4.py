@@ -2,17 +2,15 @@ from assimulo.explicit_ode import Explicit_ODE
 from assimulo.problem import Explicit_Problem
 from assimulo.ode import *
 import numpy as np
-from numpy import hstack
-from numpy.linalg import inv
-from scipy.linalg import solve
 
 import matplotlib.pyplot as mpl
 
+# spring constant and step-size, change as you like
 k = 1000
 h = 6e-2
 
-def lambdafunc(x,y):
-	hyp = np.hypot(x,y)
+def lambdafunc(x, y):
+	hyp = np.hypot(x, y)
 	return k*(hyp-1)/hyp
 
 def step(t, u, up, upp, h):
@@ -25,11 +23,13 @@ def step(t, u, up, upp, h):
 t0 = 0
 tf = 5
 
+# initial conditions
 u0 = np.array([.5, -1])
 up0 = np.zeros(2,)
 
 upp0 = np.array([0, -1]) - lambdafunc(u0[0], u0[1]) * u0
 
+# setting up the arrays
 tres = []
 ures = []
 
@@ -46,6 +46,7 @@ while t < tf:
 x = [states[0] for states in ures]
 y = [states[1] for states in ures]
 
+# plot commands
 mpl.plot(x, y, 'o', ls='--', lw=1, ms=4, markevery=[0,-1])
 mpl.plot([0, u0[0]], [0, u0[1]], ls='-', lw=1)
 mpl.annotate('t=0', xy=(x[0], y[0]), xytext=(x[0]+.05, y[0]))

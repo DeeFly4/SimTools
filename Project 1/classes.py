@@ -11,7 +11,7 @@ class BDF_2(Explicit_ODE):
 	maxit = 100
 	maxsteps = 1000
  
-	alpha=[3./2., -2., 1./2]
+	alpha = [3./2., -2., 1./2]
 	
 	def __init__(self, problem):
 		Explicit_ODE.__init__(self, problem) #Calls the base class

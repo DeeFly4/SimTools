@@ -1,6 +1,6 @@
 from __future__ import division
 import matplotlib.pyplot as mpl
-from scipy import *
+from scipy.linalg import norm
 from scipy.optimize import fsolve
 from numpy import zeros, sin, cos, array
 
@@ -34,5 +34,8 @@ y_1 = array([-0.0617138900142764496358948458001,  #  Beta
 				-0.222668390165885884674473185609,  # Omega
 				1.23054744454982119249735015568])   # epsilon
 
+# calculate initial conditions using fsolve
 g0 = fsolve(g, x0=zeros((6,)))
+
 print(g0 - y_1)
+print(norm(g0 - y_1))

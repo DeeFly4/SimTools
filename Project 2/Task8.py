@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import division
 from assimulo.problem import Explicit_Problem
-from assimulo.solvers import RungeKutta4, RungeKutta34
+from assimulo.solvers import RungeKutta4, ExplicitEuler, ImplicitEuler
 import matplotlib.pyplot as mpl
 from scipy.linalg import solve
 from numpy import array,zeros,block,hstack,sin,cos,sqrt
@@ -118,10 +118,11 @@ def rhs(t, y):
 	g_qq[4] = -rr*cobe*bep**2 + d*cobeth*(bep+thp)**2 + zf*coomep*(omp+epp)**2 + u*siep*epp**2
 	g_qq[5] = -rr*sibe*bep**2 + d*sibeth*(bep+thp)**2 + zf*siomep*(omp+epp)**2 -  u*coep*epp**2
 
+	# assembling the matrices
 	A = block([[m, gp.T], [gp, zeros((6,6))]])
 	b = hstack((ff, -g_qq))
 
-	wlam = solve(A, b)
+	wlam = solve(A, b) # array containing accelerations w and algebraic variables lambda
 	w = wlam[:7]
 
 	qdot = y[7:]
@@ -134,11 +135,12 @@ tf = 0.03
 
 model = Explicit_Problem(rhs, y0, 0)
 rk = RungeKutta4(model)
-rk.h = 1e-4 # smaller than 1e-3!
+rk.h = 1e-5 # smaller than 1e-3!
 t, y = rk.simulate(tf)
 
 angles = [states[0:7] for states in y]
 
+# plot commands
 mpl.plot(t, angles, lw=2)
 mpl.hlines(0, 0, tf, ls='--', colors='k')
 

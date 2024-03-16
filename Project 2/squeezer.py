@@ -158,14 +158,14 @@ class Seven_bar_mechanism(ap.Implicit_Problem):
 		g[4] = rr*cobe - d*cobeth - zf*coomep - u*siep - xa
 		g[5] = rr*sibe - d*sibeth - zf*siomep + u*coep - ya
 
-		# Construction of the residual
+		# Construction of the residual, (un)comment depending on which index formulation to use
 		res_1 = yp[0:7] - y[7:14]
 		res_2 = dot(m, yp[7:14]) - ff[0:7] + dot(gp.T, lamb)
 		res_3 = g # index-3
 		# res_3 = dot(gp, y[7:14]) # index-2
 		# res_3 = g_qq + dot(gp, yp[7:14]) # index-1
 
-		return hstack((res_1,res_2,res_3))
+		return hstack((res_1, res_2, res_3))
 
 squeezer = Seven_bar_mechanism()
 sim = IDA(squeezer)
@@ -182,6 +182,7 @@ t, y, yd = sim.simulate(tf, ncp)
 angles = [states[0:7] for states in y]
 lambdas = [states[14:20] for states in y]
 
+# plot commands
 fig, (ax1, ax2) = mpl.subplots(1, 2)
 
 ax1.plot(t, angles, lw=2)

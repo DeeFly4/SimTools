@@ -1,9 +1,7 @@
 from assimulo.explicit_ode import Explicit_ODE
 from assimulo.problem import Explicit_Problem
 from assimulo.ode import *
-import numpy as np
 from numpy import hstack
-from numpy.linalg import inv
 from scipy.linalg import solve
 
 import matplotlib.pyplot as mpl

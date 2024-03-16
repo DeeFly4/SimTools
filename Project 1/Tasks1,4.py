@@ -16,7 +16,7 @@ def rhs(t,y):
  
 	return np.array([y1dot, y2dot, y3dot, y4dot])
 
-# Spring constant
+# Spring constant, change as you like
 k = 1500.
 
 # Initial conditions
@@ -36,6 +36,7 @@ t, y = sim.simulate(tf)
 x = [states[0] for states in y]
 y = [states[1] for states in y]
 
+# plot commands
 mpl.plot(x, y, 'o', ls='--', lw=1, ms=4, markevery=[0,-1])
 mpl.plot([0, y0[0]], [0, y0[1]], ls='-', lw=1)
 mpl.annotate('t=0', xy=(x[0], y[0]), xytext=(x[0]+.05, y[0]))
