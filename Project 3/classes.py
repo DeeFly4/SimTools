@@ -50,10 +50,15 @@ class Newmark(Explicit_ODE_2nd):
 		self.A = self.M / (self.Beta*self.h**2) + self.gamma*self.C / (self.Beta*self.h) + self.K
  
 	def integrate(self, t0, u0, up0, tf, opts):
-		h = min(self.h, abs(tf-t0))
 		upp0 = solve(self.M, self.f(0) - self.K@u0)
-		if self.C.any() != 0 and self.Beta != 0:
+		
+		if self.C.all() == 0 and self.Beta == 0:
+			self.step = self.explicit_step
+		else:
 			upp0 -= solve(self.M, self.C@up0)
+			self.step = self.implicit_step
+
+		h = min(self.h, abs(tf-t0))
 
 		tres = []
 		ures = []
@@ -61,10 +66,7 @@ class Newmark(Explicit_ODE_2nd):
 		t, u, up, upp = t0, u0, up0, upp0
   
 		while t < tf:
-			if self.C.all() == 0 and self.Beta == 0:
-				t, u, up, upp = self.explicit_step(t, u, up, upp, h)
-			else:
-				t, u, up, upp = self.implicit_step(t, u, up, upp, h)
+			t, u, up, upp = self.step(t, u, up, upp, h)
 
 			tres.append(t)
 			ures.append(u.copy())
@@ -72,10 +74,6 @@ class Newmark(Explicit_ODE_2nd):
 			h = min(self.h, abs(tf-t))
 
 		return ID_PY_OK, tres, ures
-	
-	def simulate(self, tf):
-		flag, t, u = self.integrate(self.t0, self.u0, self.up0, tf, opts=None)
-		return t, u
 	
 	def explicit_step(self, t, u, up, upp, h):
 		u_next = u + up*h + upp*h**2/2
@@ -100,6 +98,10 @@ class Newmark(Explicit_ODE_2nd):
 		upp_next = (u_next - u)/bh2 - up/bh - upp*inv2bmo
   
 		return t_next, u_next, up_next, upp_next
+
+	def simulate(self, tf):
+		flag, t, u = self.integrate(self.t0, self.u0, self.up0, tf, opts=None)
+		return t, u
 
 class HHT_alpha(Explicit_ODE_2nd):
 	alpha = -1/3
