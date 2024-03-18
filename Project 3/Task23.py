@@ -29,6 +29,7 @@ t0 = 0
 tf = 3
 
 model = Explicit_Problem_2nd(M2, C2, K2, f2, u0, up0, t0)
+model.name = 'Test problem'
 cvode = CVode(model)
 sim = Newmark(model) # can be Newmark or HHT_alpha
 sim.h = 1e-3

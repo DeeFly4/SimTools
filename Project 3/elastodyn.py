@@ -180,8 +180,8 @@ if __name__ == '__main__':
 	
 	# Second-order problem with my class
 	beam_problem_2nd = Explicit_Problem_2nd(M, C, K, f, u0, up0, 0)
-	sim = HHT_alpha(beam_problem_2nd)
-	sim.h = 1e-3
+	beam_problem_2nd.name = 'Modified Elastodyn example from DUNE-FEM'
+	sim = Newmark(beam_problem_2nd)
 	
 	tt, y = sim.simulate(t_end)
 
