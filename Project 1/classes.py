@@ -128,8 +128,7 @@ class BDF(Explicit_ODE):
 		self.log_message(' Number of Function Evaluations : '+str(self.statistics["nfcns"]),         verbose)
 			
 		self.log_message('\nSolver options:\n',                                    verbose)
-		self.log_message(' Solver            : BDF4',                     verbose)
-		self.log_message(' Solver type       : Fixed step\n',                      verbose)
+		self.log_message(' Solver type       : Fixed step',                      verbose)
 
 class BDF_2(BDF):
 	"""
@@ -173,6 +172,11 @@ class BDF_2(BDF):
 			raise Explicit_ODE_Exception('Final time not reached within maximum number of steps')
 		
 		return ID_PY_OK, tres, yres
+
+	def print_statistics(self, verbose=NORMAL):
+			super().print_statistics(verbose)
+			self.log_message(' Solver            : BDF2\n',                     verbose)
+	
 	
 class BDF_3(BDF):
 	"""
@@ -222,6 +226,11 @@ class BDF_3(BDF):
 			raise Explicit_ODE_Exception('Final time not reached within maximum number of steps')
 		
 		return ID_PY_OK, tres, yres
+
+	def print_statistics(self, verbose=NORMAL):
+			super().print_statistics(verbose)
+			self.log_message(' Solver            : BDF3\n',                     verbose)
+	
 
 class BDF_4(BDF):
 	"""
@@ -276,3 +285,8 @@ class BDF_4(BDF):
 			raise Explicit_ODE_Exception('Final time not reached within maximum number of steps')
 		
 		return ID_PY_OK, tres, yres
+
+	def print_statistics(self, verbose=NORMAL):
+			super().print_statistics(verbose)
+			self.log_message(' Solver            : BDF4\n',                     verbose)
+	
