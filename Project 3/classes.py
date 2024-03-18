@@ -3,6 +3,8 @@ from assimulo.problem import Explicit_Problem
 from assimulo.ode import *
 from numpy import hstack
 from scipy.linalg import solve
+import scipy.sparse as ssp
+from scipy.sparse.linalg import spsolve
 
 import matplotlib.pyplot as mpl
 
@@ -12,9 +14,15 @@ class Explicit_Problem_2nd(Explicit_Problem):
 		self.up0 = up0
 		self.t0 = t0
 
-		self.M = M
-		self.C = C
-		self.K = K
+		if ssp.issparse(M) and ssp.issparse(C) and ssp.issparse(K):
+			self.M = M
+			self.C = C
+			self.K = K
+		else:
+			self.M = ssp.csc_matrix(M)
+			self.C = ssp.csc_matrix(C)
+			self.K = ssp.csc_matrix(K)
+
 		self.f = f
 		Explicit_Problem.__init__(self, self.rhs, hstack((self.u0, self.up0)), t0)
 
@@ -23,7 +31,7 @@ class Explicit_Problem_2nd(Explicit_Problem):
 		up = y[len(y)//2:len(y)]
 
 		y1dot = up
-		y2dot = solve(self.M, -self.K@u - self.C@up + self.f(t))
+		y2dot = spsolve(self.M, -self.K@u - self.C@up + self.f(t))
 
 		return hstack((y1dot, y2dot))
 
@@ -50,12 +58,12 @@ class Newmark(Explicit_ODE_2nd):
 		self.A = self.M / (self.Beta*self.h**2) + self.gamma*self.C / (self.Beta*self.h) + self.K
  
 	def integrate(self, t0, u0, up0, tf, opts):
-		upp0 = solve(self.M, self.f(0) - self.K@u0)
+		upp0 = spsolve(self.M, self.f(0) - self.K@u0)
 		
-		if self.C.all() == 0 and self.Beta == 0:
+		if self.C.nnz == 0 and self.Beta == 0:
 			self.step = self.explicit_step
 		else:
-			upp0 -= solve(self.M, self.C@up0)
+			upp0 -= spsolve(self.M, self.C@up0)
 			self.step = self.implicit_step
 
 		h = min(self.h, abs(tf-t0))
@@ -77,7 +85,7 @@ class Newmark(Explicit_ODE_2nd):
 	
 	def explicit_step(self, t, u, up, upp, h):
 		u_next = u + up*h + upp*h**2/2
-		upp_next = solve(self.M, self.f(t) - self.K@u)
+		upp_next = spsolve(self.M, self.f(t) - self.K@u)
 		up_next = up + upp*h*(1-self.gamma) + self.gamma*upp_next*h
 
 		return t+h, u_next, up_next, upp_next
@@ -93,7 +101,7 @@ class Newmark(Explicit_ODE_2nd):
 
 		Bn = self.f(t_next) + self.M @ (u/bh2 + up/bh + upp*inv2bmo) + self.C @ (self.gamma*u/bh - up*omgb - h*upp*omg2b)
 		
-		u_next = solve(self.A, Bn)
+		u_next = spsolve(self.A, Bn)
 		up_next = self.gamma*(u_next - u)/bh + up*omgb + h*upp*omg2b
 		upp_next = (u_next - u)/bh2 - up/bh - upp*inv2bmo
   
@@ -127,7 +135,7 @@ class HHT_alpha(Explicit_ODE_2nd):
 
 		Bn = self.f(t_next) + self.M @ (u/bh2 + up/bh + upp*inv2bmo) + self.C @ (self.gamma*u/bh - up*omgb - h*upp*omg2b) + self.alpha*self.K@u
 		
-		u_next = solve(self.A, Bn)
+		u_next = spsolve(self.A, Bn)
 		up_next = self.gamma*(u_next - u)/bh + up*omgb + h*upp*omg2b
 		upp_next = (u_next - u)/bh2 - up/bh - upp*inv2bmo
   
@@ -135,7 +143,7 @@ class HHT_alpha(Explicit_ODE_2nd):
 
 	def integrate(self, t, u, up, tf, opts):
 		h = min(self.h, abs(tf-t))
-		upp = solve(self.M, self.f(0) - self.K@u - self.C@up)
+		upp = spsolve(self.M, self.f(0) - self.K@u - self.C@up)
 
 		tres = []
 		ures = []

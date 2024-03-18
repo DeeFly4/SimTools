@@ -22,8 +22,8 @@ from dune.fem.space import dgonb as dgSpace
 from dune.fem.operator import galerkin as galerkinOperator
 from dune.fem.operator import linear as linearOperator
 
-import scipy.sparse as ssp
 import scipy.sparse.linalg as ssl
+
 mpl.close('all')
 
 class elastodynamic_beam:
@@ -48,7 +48,7 @@ class elastodynamic_beam:
 			upper.append( 0.04 )
 			cells.append( gridsize )
 
-		self.mesh = leafGridView( lower, upper, cells )
+		self.mesh = leafGridView(lower, upper, cells)
 		dim = self.mesh.dimension
 
 		# force only up to a certain time
@@ -168,19 +168,19 @@ if __name__ == '__main__':
 	u0 = np.zeros(beam_class.ndofs)
 	up0 = np.zeros(beam_class.ndofs)
 	
-	M = ssp.csr_matrix.toarray(beam_class.Mass_mat)
-	C = ssp.csr_matrix.toarray(beam_class.Dampening_mat)
-	K = ssp.csr_matrix.toarray(beam_class.Stiffness_mat)
+	M = beam_class.Mass_mat
+	C = beam_class.Dampening_mat
+	K = beam_class.Stiffness_mat
 	
 	# First-order problem with built-in classes
 	beam_problem = aode.Explicit_Problem(beam_class.rhs,y0=np.zeros((2*beam_class.ndofs,)))
 	beam_problem.name='Modified Elastodyn example from DUNE-FEM'
-	beamCV = aso.ImplicitEuler(beam_problem) # CVode solver instance
-	beamCV.h = 0.1 # constant step size here
+	beamIE = aso.ImplicitEuler(beam_problem) # ImplicitEuler solver instance
+	beamIE.h = 0.1 # constant step size here
 	
 	# Second-order problem with my class
 	beam_problem_2nd = Explicit_Problem_2nd(M, C, K, f, u0, up0, 0)
-	sim = Newmark(beam_problem_2nd)
+	sim = HHT_alpha(beam_problem_2nd)
 	sim.h = 1e-3
 	
 	tt, y = sim.simulate(t_end)
