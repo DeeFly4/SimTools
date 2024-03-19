@@ -122,13 +122,14 @@ class BDF(Explicit_ODE):
 			raise Explicit_ODE_Exception('Corrector could not converge within %i iterations' %self.maxit)
 
 	def print_statistics(self, verbose=NORMAL):
-		self.log_message('Final Run Statistics            : {name} \n'.format(name=self.problem.name),        verbose)
+		self.log_message('Final Run Statistics            : {name} \n'.format(name=self.problem.name), verbose)
 		self.log_message(' Step-length                    : {stepsize} '.format(stepsize=self.options["h"]), verbose)
-		self.log_message(' Number of Steps                : '+str(self.statistics["nsteps"]),          verbose)               
-		self.log_message(' Number of Function Evaluations : '+str(self.statistics["nfcns"]),         verbose)
+		self.log_message(' Number of Steps                : '+str(self.statistics["nsteps"]), verbose)               
+		self.log_message(' Number of Function Evaluations : '+str(self.statistics["nfcns"]), verbose)
 			
-		self.log_message('\nSolver options:\n',                                    verbose)
-		self.log_message(' Solver type       : Fixed step',                      verbose)
+		self.log_message('\nSolver options:\n', verbose)
+		self.log_message(' Solver type : Fixed step', verbose)
+		self.log_message(' Solver      : '+self.__class__.__name__+'\n', verbose)
 
 class BDF_2(BDF):
 	"""
@@ -140,7 +141,7 @@ class BDF_2(BDF):
 		
 	def integrate(self, t, y, tf, opts):
 		"""
-		_integrates (t,y) values until t > tf. First step is implicit Euler.
+		integrates (t,y) values until t > tf. First step is implicit Euler.
 		"""
 		h = self.options["h"]
 		h = min(h, abs(tf-t))
@@ -172,11 +173,6 @@ class BDF_2(BDF):
 			raise Explicit_ODE_Exception('Final time not reached within maximum number of steps')
 		
 		return ID_PY_OK, tres, yres
-
-	def print_statistics(self, verbose=NORMAL):
-			super().print_statistics(verbose)
-			self.log_message(' Solver            : BDF2\n',                     verbose)
-	
 	
 class BDF_3(BDF):
 	"""
@@ -188,7 +184,7 @@ class BDF_3(BDF):
 		
 	def integrate(self, t, y, tf, opts):
 		"""
-		_integrates (t,y) values until t > tf. First step is implicit Euler, second step is BDF2.
+		integrates (t,y) values until t > tf. First step is implicit Euler, second step is BDF2.
 		"""
 		h = self.options["h"]
 		h = min(h, abs(tf-t))
@@ -225,12 +221,7 @@ class BDF_3(BDF):
 		else:
 			raise Explicit_ODE_Exception('Final time not reached within maximum number of steps')
 		
-		return ID_PY_OK, tres, yres
-
-	def print_statistics(self, verbose=NORMAL):
-			super().print_statistics(verbose)
-			self.log_message(' Solver            : BDF3\n',                     verbose)
-	
+		return ID_PY_OK, tres, yres	
 
 class BDF_4(BDF):
 	"""
@@ -242,7 +233,7 @@ class BDF_4(BDF):
 		
 	def integrate(self, t, y, tf, opts):
 		"""
-		_integrates (t,y) values until t > tf. First step is implicit Euler, second step is BDF2, third step is BDF3
+		integrates (t,y) values until t > tf. First step is implicit Euler, second step is BDF2, third step is BDF3
 		"""
 		h = self.options["h"]
 		h = min(h, abs(tf-t))
@@ -285,8 +276,3 @@ class BDF_4(BDF):
 			raise Explicit_ODE_Exception('Final time not reached within maximum number of steps')
 		
 		return ID_PY_OK, tres, yres
-
-	def print_statistics(self, verbose=NORMAL):
-			super().print_statistics(verbose)
-			self.log_message(' Solver            : BDF4\n',                     verbose)
-	
