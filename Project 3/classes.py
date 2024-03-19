@@ -62,6 +62,25 @@ class Explicit_ODE_2nd(Explicit_ODE):
 
 	h = property(_get_h,_set_h)
 
+	def _integrate(self, t, u, up, upp, tf, step):
+		h = self.options["h"]
+		h = min(self.h, abs(tf-t))
+
+		tres = []
+		ures = []
+  
+		while t < tf:
+			self.statistics["nsteps"] += 1
+			t, u, up, upp = step(t, u, up, upp, h)
+
+			tres.append(t)
+			ures.append(u.copy())
+
+			h = min(self.h, abs(tf-t))
+
+		return ID_PY_OK, tres, ures
+
+
 	def print_statistics(self, verbose=NORMAL):
 		self.log_message('\nFinal Run Statistics          : {name} \n'.format(name=self.problem.name), verbose)
 		self.log_message(' Step-length                    : {stepsize} '.format(stepsize=self.options["h"]), verbose)
@@ -69,11 +88,12 @@ class Explicit_ODE_2nd(Explicit_ODE):
 
 		self.log_message('\nSolver options:\n', verbose)
 		self.log_message(' Solver type : Fixed step', verbose)
+		self.log_message(' Solver      : '+self.__class__.__name__, verbose)
 
 	def simulate(self, tf):
 		t = time.perf_counter()
 
-		flag, tt, u = self.integrate(self.t0, self.u0, self.up0, tf, opts=None)
+		flag, tt, u = self.integrate(self.t0, self.u0, self.up0, tf)
 
 		self.print_statistics()
 		self.log_message('Simulation interval	  : ' + str(self.t0) + ' - ' + str(tf) + ' seconds.', NORMAL)
@@ -94,33 +114,16 @@ class Newmark(Explicit_ODE_2nd):
 		self.options["gamma"] = self.gamma
 		self.options["Beta"] = self.Beta
  
-	def integrate(self, t0, u0, up0, tf, opts):
+	def integrate(self, t0, u0, up0, tf):
 		upp0 = spsolve(self.M, self.f(0) - self.K@u0)
 		
 		if self.C.nnz == 0 and self.Beta == 0:
-			self.step = self.explicit_step
+			step = self.explicit_step
 		else:
 			upp0 -= spsolve(self.M, self.C@up0)
-			self.step = self.implicit_step
+			step = self.implicit_step
 
-		h = self.options["h"]
-		h = min(self.h, abs(tf-t0))
-
-		tres = []
-		ures = []
-  
-		t, u, up, upp = t0, u0, up0, upp0
-  
-		while t < tf:
-			self.statistics["nsteps"] += 1
-			t, u, up, upp = self.step(t, u, up, upp, h)
-
-			tres.append(t)
-			ures.append(u.copy())
-
-			h = min(self.h, abs(tf-t))
-
-		return ID_PY_OK, tres, ures
+		return self._integrate(t0, u0, up0, upp0, tf, step)
 	
 	def explicit_step(self, t, u, up, upp, h):
 		u_next = u + up*h + upp*h**2/2
@@ -148,7 +151,6 @@ class Newmark(Explicit_ODE_2nd):
 
 	def print_statistics(self, verbose=NORMAL):
 		super().print_statistics(verbose)
-		self.log_message(' Solver      : Newmark', verbose)
 		self.log_message(' gamma, Beta : ' + str(self.options["gamma"]) + ', ' + str(self.options["Beta"]) + '\n', verbose)		
 
 class HHT_alpha(Explicit_ODE_2nd):
@@ -182,26 +184,10 @@ class HHT_alpha(Explicit_ODE_2nd):
   
 		return t_next, u_next, up_next, upp_next
 
-	def integrate(self, t, u, up, tf, opts):
-		h = self.options["h"]
-		h = min(self.h, abs(tf-t))
-		upp = spsolve(self.M, self.f(0) - self.K@u - self.C@up)
-
-		tres = []
-		ures = []
-  
-		while t < tf:
-			self.statistics["nsteps"] += 1
-			t, u, up, upp = self.step(t, u, up, upp, h)
-
-			tres.append(t)
-			ures.append(u.copy())
-
-			h = min(self.h, abs(tf-t))
-
-		return ID_PY_OK, tres, ures
+	def integrate(self, t0, u0, up0, tf):
+		upp0 = spsolve(self.M, self.f(0) - self.K@u0 - self.C@up0)
+		return self._integrate(t0, u0, up0, upp0, tf, self.step)
 
 	def print_statistics(self, verbose=NORMAL):
 		super().print_statistics(verbose)
-		self.log_message(' Solver      : HHT-alpha', verbose)
 		self.log_message(' alpha       : '+str(self.options["alpha"])+'\n', verbose)
