@@ -93,7 +93,7 @@ class Explicit_ODE_2nd(Explicit_ODE):
 	def simulate(self, tf):
 		t = time.perf_counter()
 
-		flag, tt, u = self.integrate(self.t0, self.u0, self.up0, tf)
+		_, tt, u = self.integrate(self.t0, self.u0, self.up0, tf)
 
 		self.print_statistics()
 		self.log_message('Simulation interval	  : ' + str(self.t0) + ' - ' + str(tf) + ' seconds.', NORMAL)
