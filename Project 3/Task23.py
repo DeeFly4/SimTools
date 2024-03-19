@@ -47,7 +47,7 @@ ax1.hlines(0, 0, tf, ls='--', colors='k')
 ax2.hlines(0, 0, tf, ls='--', colors='k')
 
 ax1.set_title('CVode', fontsize=16)
-ax2.set_title('Newmark', fontsize=16)
+ax2.set_title(sim.__class__.__name__, fontsize=16)
 ax1.set_xlabel('Time [s]', fontsize=14)
 ax2.set_xlabel('Time [s]', fontsize=14)
 
