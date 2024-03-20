@@ -1,4 +1,4 @@
-## Simulation Tools (FMMN05)
+# Simulation Tools (FMMN05)
 
 Code and project reports for the course Simulation Tools at LTH.
 
@@ -6,7 +6,7 @@ Code and project reports for the course Simulation Tools at LTH.
 
 The code is Python used with conda environments. All projects use [Assimulo](https://jmodelica.org/assimulo/) and some other basic packages. You may have to install a specific **python** version for compatibility.
 
-### Projects 1 and 2
+#### Projects 1 and 2
 
 ```console
 conda create --name simtools
@@ -15,7 +15,7 @@ conda install -c conda-forge matplotlib scipy numpy
 conda install -c conda-forge assimulo
 ```
 
-### Project 3
+#### Project 3
 
 This project uses [DUNE](https://dune-project.org/) as well. This software will only install and run on **Linux** and **MacOS**. **Windows** users can use [WSL](https://learn.microsoft.com/en-us/windows/wsl/install) to install **Ubuntu LTS**. A collection of necessary **Ubuntu** packages can be found in [bootstrap.sh](bootstrap.sh). The installation has to be done with root privileges, e.g.
 

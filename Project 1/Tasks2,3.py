@@ -27,7 +27,7 @@ tf = 5.
 model = Explicit_Problem(rhs, y0, t0)
 model.name = 'Elastic Pendulum'
 
-sim = BDF_2(model) # Create a BDF solver of choice
+sim = BDF_4(model) # Create a BDF solver of choice
 EE_sim = ExplicitEuler(model)
 t, y = sim.simulate(tf)
 
